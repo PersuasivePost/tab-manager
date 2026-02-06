@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Icon Generator</title>
+  </head>
+  <body>
+    <canvas id="canvas16" width="16" height="16"></canvas>
+    <canvas id="canvas48" width="48" height="48"></canvas>
+    <canvas id="canvas128" width="128" height="128"></canvas>
+    <br /><br />
+    <button onclick="downloadIcons()">Download Icons</button>
+    <div id="links"></div>
+
+    <script>
+      function drawIcon(canvas, size) {
+        const ctx = canvas.getContext("2d");
+        const padding = size * 0.15;
+
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, size, size);
+        gradient.addColorStop(0, "#8B5CF6");
+        gradient.addColorStop(1, "#3B82F6");
+
+        // Background with rounded corners (approximation)
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+
+        // Draw tab icon in white
+        ctx.strokeStyle = "white";
+        ctx.fillStyle = "white";
+        ctx.lineWidth = size / 32;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // Draw rectangle
+        const rectX = padding;
+        const rectY = padding;
+        const rectW = size - padding * 2;
+        const rectH = size - padding * 2;
+
+        ctx.beginPath();
+        ctx.roundRect(rectX, rectY, rectW, rectH, size / 16);
+        ctx.stroke();
+
+        // Draw lines inside
+        const lineStart = rectX + rectW * 0.2;
+        const lineEnd = rectX + rectW * 0.8;
+        const line1Y = rectY + rectH * 0.3;
+        const line2Y = rectY + rectH * 0.5;
+        const line3Y = rectY + rectH * 0.7;
+
+        ctx.beginPath();
+        ctx.moveTo(lineStart, line1Y);
+        ctx.lineTo(lineEnd, line1Y);
+        ctx.moveTo(lineStart, line2Y);
+        ctx.lineTo(lineEnd, line2Y);
+        ctx.moveTo(lineStart, line3Y);
+        ctx.lineTo(lineEnd - rectW * 0.2, line3Y);
+        ctx.stroke();
+      }
+
+      // Draw all sizes
+      drawIcon(document.getElementById("canvas16"), 16);
+      drawIcon(document.getElementById("canvas48"), 48);
+      drawIcon(document.getElementById("canvas128"), 128);
+
+      function downloadIcons() {
+        const linksDiv = document.getElementById("links");
+        linksDiv.innerHTML = '<h3>Right-click each image and "Save As":</h3>';
+
+        ["16", "48", "128"].forEach((size) => {
+          const canvas = document.getElementById("canvas" + size);
+          const link = document.createElement("a");
+          link.download = "icon" + size + ".png";
+          link.href = canvas.toDataURL("image/png");
+          link.textContent = "Download icon" + size + ".png";
+          link.style.display = "block";
+          link.style.margin = "10px";
+          linksDiv.appendChild(link);
+
+          // Auto-click to download
+          link.click();
+        });
+      }
+    </script>
+  </body>
+</html>
