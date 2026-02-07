@@ -426,7 +426,23 @@ body {
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   transition: all 0.2s ease;
-  cursor: pointer;
+  cursor: grab;
+}
+
+.collection-card:active {
+  cursor: grabbing;
+}
+
+.collection-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.collection-card.drag-over {
+  border-color: var(--primary-light);
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
 }
 
 .collection-card:hover {
@@ -439,8 +455,35 @@ body {
 .collection-header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
+}
+
+/* Drag Handle */
+.drag-handle {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: grab;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.drag-handle:hover {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle svg {
+  width: 100%;
+  height: 100%;
 }
 
 .collection-info {

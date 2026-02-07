@@ -201,6 +201,78 @@ class TabCollectionsManager {
 
     // Bind card events
     this.bindCardEvents();
+    this.bindDragAndDrop();
+  }
+
+  // Bind drag and drop events
+  bindDragAndDrop() {
+    const cards = document.querySelectorAll(".collection-card");
+    let draggedElement = null;
+    let draggedIndex = null;
+
+    cards.forEach((card, index) => {
+      // Drag start
+      card.addEventListener("dragstart", (e) => {
+        draggedElement = card;
+        draggedIndex = index;
+        card.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/html", card.innerHTML);
+      });
+
+      // Drag end
+      card.addEventListener("dragend", (e) => {
+        card.classList.remove("dragging");
+        document.querySelectorAll(".collection-card").forEach((c) => {
+          c.classList.remove("drag-over");
+        });
+      });
+
+      // Drag over
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+
+        if (draggedElement !== card) {
+          card.classList.add("drag-over");
+        }
+      });
+
+      // Drag leave
+      card.addEventListener("dragleave", (e) => {
+        card.classList.remove("drag-over");
+      });
+
+      // Drop
+      card.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        card.classList.remove("drag-over");
+
+        if (draggedElement !== card) {
+          const targetId = card.dataset.id;
+          const draggedId = draggedElement.dataset.id;
+
+          // Find indices in collections array
+          const draggedIdx = this.collections.findIndex(
+            (c) => c.id === draggedId,
+          );
+          const targetIdx = this.collections.findIndex(
+            (c) => c.id === targetId,
+          );
+
+          // Reorder collections array
+          const [removed] = this.collections.splice(draggedIdx, 1);
+          this.collections.splice(targetIdx, 0, removed);
+
+          // Save and re-render
+          await this.saveToStorage();
+          this.renderCollections();
+          this.showToast("Collection order updated", "success");
+        }
+      });
+    });
   }
 
   // Create collection card HTML
@@ -216,12 +288,16 @@ class TabCollectionsManager {
     const previewTabs = collection.tabs.slice(0, 4);
     const remainingCount = collection.tabs.length - 4;
 
+    const fallbackIcon =
+      "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>";
+
     const tabPreviewHTML = previewTabs
       .map(
         (tab) => `
       <div class="tab-preview-item" title="${this.escapeHtml(tab.title)}">
-        <img src="${tab.favIconUrl || "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>"}" 
-             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>'">
+        <img src="${tab.favIconUrl || fallbackIcon}" 
+             data-fallback="${fallbackIcon}"
+             class="tab-favicon">
         ${this.escapeHtml(this.truncate(tab.title, 18))}
       </div>
     `,
@@ -229,8 +305,18 @@ class TabCollectionsManager {
       .join("");
 
     return `
-      <div class="collection-card" data-id="${collection.id}">
+      <div class="collection-card" data-id="${collection.id}" draggable="true">
         <div class="collection-header">
+          <div class="drag-handle" title="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="5" r="1.5" fill="currentColor"/>
+              <circle cx="15" cy="5" r="1.5" fill="currentColor"/>
+              <circle cx="9" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="9" cy="19" r="1.5" fill="currentColor"/>
+              <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+            </svg>
+          </div>
           <div class="collection-info">
             <h3>${this.escapeHtml(collection.name)}</h3>
             <div class="collection-meta">
@@ -302,6 +388,13 @@ class TabCollectionsManager {
       btn.addEventListener("click", (e) => {
         const id = e.target.closest(".delete-btn").dataset.id;
         this.deleteCollection(id);
+      });
+    });
+
+    // Favicon error handling
+    document.querySelectorAll(".tab-favicon").forEach((img) => {
+      img.addEventListener("error", (e) => {
+        e.target.src = e.target.dataset.fallback;
       });
     });
   }
